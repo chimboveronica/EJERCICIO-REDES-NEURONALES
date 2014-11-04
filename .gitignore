@@ -1,20 +1,54 @@
 clc;
 clear;
-bcdata=csvread('wdbc.data',0,1);
+bcdata=csvread('diabetes.data',0,1);
 size(bcdata)
 bcdata=bcdata';
 size(bcdata)
 temp_target=bcdata(1,:);
+%determinar las entradas y salidas
 target=bcdata(1,:);
 indata=bcdata(2:31,:);
+%para graficar las entradas y salidas
+%Con el comando plot podemos ver el objetivo y lo que hemos conseguido hasta el momento
+plot(target, 'o')
+hold on
+plot(indata, '+r')
+%param2: cantidad de neuronas
 input_ranges=minmax(indata);
+%param3: funciones de activación
 net=newff(input_ranges,[10 1],{'tansig','logsig'},'trainlm');
 training_in = indata(:,1:2:length(indata));
 testset.P = indata(:,2:2:length(indata));
 training_target = target(1:2:length(target));
 testset.T = target(2:2:length(target));
+%param4: funciones de entrenamiento
 net.trainParam.show=1;
+%Entreno con mis entradas y salidas porq es supervisadas
 net=train(net,training_in,training_target,[],[],testset);
-porc_err_ent = 100*(1-accuracy(net,training_in,training_target))
-porc_err_valida = 100*(1-accuracy(net,testset.P,testset.T))
-porc_err_todo = 100*(1-accuracy(net,indata,target))
+%Para calcular la precision de la solucion aportada por la red
+output=sim(net,training_in);
+%Para ver los pesos que se han calculado en el entrenamiento
+%net.IW{1,1};
+%net.LW{2,1}
+%graficamos los resultados
+plot(output,'g*'); 
+porc_error_entrada = 100*(1-accuracy(net,training_in,training_target))
+porc_error_valida = 100*(1-accuracy(net,testset.P,testset.T))
+porc_error_todo = 100*(1-accuracy(net,indata,target))
+
+%para obtener el numero de aciertos de la red
+N = size(testset.T);
+num_aciertos = 1;
+for i=1:N(2),
+    if output(i) > 0.5,
+        if testset.T(i) == 1,
+               num_aciertos = num_aciertos + 1;
+        end
+    else
+       if testset.T(i) == 0,
+               num_aciertos = num_aciertos + 1;
+        end
+    end
+end  
+
+fprintf('De 569 evaluados %s la red a acertado\n',num2str(num_aciertos))
